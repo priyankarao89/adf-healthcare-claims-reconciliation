@@ -1,0 +1,70 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-healthcare-claims-priyanka"
+		},
+		"LS_ADLS_Claims_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'LS_ADLS_Claims'"
+		},
+		"LS_ADLS_Claims_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://claimsinformation.dfs.core.windows.net/"
+		},
+		"LS_CMS_NPI_API_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://npiregistry.cms.hhs.gov"
+		},
+		"LS_GIT_ICD10_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://raw.githubusercontent.com"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "adf-healthcare-claims-priyanka_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"LS_ADLS_Claims_accountKey": {
+						"value": "[parameters('LS_ADLS_Claims_accountKey')]"
+					},
+					"LS_ADLS_Claims_properties_typeProperties_url": {
+						"value": "[parameters('LS_ADLS_Claims_properties_typeProperties_url')]"
+					},
+					"LS_CMS_NPI_API_properties_typeProperties_url": {
+						"value": "[parameters('LS_CMS_NPI_API_properties_typeProperties_url')]"
+					},
+					"LS_GIT_ICD10_properties_typeProperties_url": {
+						"value": "[parameters('LS_GIT_ICD10_properties_typeProperties_url')]"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
