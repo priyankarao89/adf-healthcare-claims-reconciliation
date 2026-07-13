@@ -1,0 +1,23 @@
+{
+	"name": "DS_GIT_ICD10",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_GIT_ICD10",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation",
+				"relativeUrl": "priyankarao89/ADF_Healthcare/refs/heads/main/icd10_reference.csv"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

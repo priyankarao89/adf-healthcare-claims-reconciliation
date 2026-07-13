@@ -1,0 +1,15 @@
+{
+	"name": "adf-healthcare-claims-priyanka",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "a1bff493-ac9f-4286-af37-7a5237cf93f0",
+		"tenantId": "da90653e-1e02-4208-b68a-6224891bea63"
+	}
+}

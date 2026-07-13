@@ -1,0 +1,119 @@
+{
+	"name": "DF_Claims_Validation_Transform",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_ADLS_Staging_Claims_Folder",
+						"type": "DatasetReference"
+					},
+					"name": "sourceClaims"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_ADLS_Staging_Reference_File",
+						"type": "DatasetReference"
+					},
+					"name": "sourceICD10"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DS_ADLS_Reporting_Claims_Summary",
+						"type": "DatasetReference"
+					},
+					"name": "sink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "selectClaimsColumns"
+				},
+				{
+					"name": "filterValidClaims"
+				},
+				{
+					"name": "deriveCleanClaims"
+				},
+				{
+					"name": "join"
+				},
+				{
+					"name": "deriveICDValidation"
+				},
+				{
+					"name": "aggregate"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          claim_id as string,",
+				"          service_date as date,",
+				"          patient_id as string,",
+				"          ssn as string,",
+				"          provider_npi as integer,",
+				"          diagnosis_code as string,",
+				"          procedure_code as integer,",
+				"          payer as string,",
+				"          billed_amount as double,",
+				"          allowed_amount as double,",
+				"          claim_status as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     wildcardPaths:['claims/*.csv']) ~> sourceClaims",
+				"source(output(",
+				"          diagnosis_code as string,",
+				"          description as string,",
+				"          category as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> sourceICD10",
+				"sourceClaims select(mapColumn(",
+				"          claim_id,",
+				"          service_date,",
+				"          patient_id,",
+				"          ssn,",
+				"          provider_npi,",
+				"          diagnosis_code,",
+				"          procedure_code,",
+				"          payer,",
+				"          billed_amount,",
+				"          allowed_amount,",
+				"          claim_status",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> selectClaimsColumns",
+				"selectClaimsColumns filter(billed_amount >= 0 && claim_status != 'REJECTED') ~> filterValidClaims",
+				"filterValidClaims derive(ssn_masked = concat('XXX-XX-', right(toString(ssn), 4)),",
+				"          ssn = toString(null()),",
+				"          allowed_amount = coalesce(allowed_amount, billed_amount * 0.8),",
+				"          load_date = currentDate()) ~> deriveCleanClaims",
+				"deriveCleanClaims, sourceICD10 join(selectClaimsColumns@diagnosis_code == sourceICD10@diagnosis_code,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join",
+				"join derive(icd10_valid = !isNull(description)) ~> deriveICDValidation",
+				"deriveICDValidation aggregate(groupBy(provider_npi,",
+				"          payer,",
+				"          icd10_valid),",
+				"     total_billed = sum(billed_amount),",
+				"          total_allowed = sum(allowed_amount),",
+				"          claim_count = count()) ~> aggregate",
+				"aggregate sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink"
+			]
+		}
+	}
+}

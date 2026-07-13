@@ -1,0 +1,134 @@
+{
+	"name": "ClaimsNPIValidationPipeline",
+	"properties": {
+		"activities": [
+			{
+				"name": "WEB_Validate_NPI",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat('https://npiregistry.cms.hhs.gov/api/?number=', pipeline().parameters.p_provider_npi, '&version=2.1')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "IF_NPI_Exists",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "WEB_Validate_NPI",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(activity('WEB_Validate_NPI').output.result_count, 0)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "SET_NPI_Status_Invalid",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "NPIStatus",
+								"value": "Invalid NPI"
+							}
+						},
+						{
+							"name": "RETURN_NPI_Invalid_Status",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "SET_NPI_Status_Invalid",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "NPIStatus",
+								"value": "Invalid NPI"
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "SET_NPI_Status_Valid",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "NPIStatus",
+								"value": "Valid NPI"
+							}
+						},
+						{
+							"name": "RETURN_NPI_Valid_Status",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "SET_NPI_Status_Valid",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "NPIStatus",
+								"value": "Valid NPI"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_provider_npi": {
+				"type": "string",
+				"defaultValue": "1112223339"
+			}
+		},
+		"variables": {
+			"NPIStatus": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-07-09T16:17:52Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
